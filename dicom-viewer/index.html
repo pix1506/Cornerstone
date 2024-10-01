@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM Viewer</title>
+    <style>
+        #dicomImage {
+            width: 512px;
+            height: 512px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>鄭祺穎的DICOM VIEWER:</h1>
+    <h1>目前功能(20240709): 滑鼠左鍵zoomin & zoomout、按鈕測試、滑鼠右鍵平移</h1>
+    <input type="file" id="fileInput" />
+    <div id="dicomImage"></div>
+    <button id="zoomIn">Zoom In</button>
+    <button id="zoomOut">Zoom Out</button>
+
+    <script src="node_modules/cornerstone-core/dist/cornerstone.js"></script>
+    <script src="node_modules/cornerstone-wado-image-loader/dist/dynamic-import/cornerstoneWADOImageLoader.min.js"></script>
+    <script src="node_modules/dicom-parser/dist/dicomParser.js"></script>
+    <script src="node_modules/cornerstone-math/dist/cornerstoneMath.js"></script>
+    <script src="node_modules/cornerstone-tools/dist/cornerstoneTools.js"></script>
+    <script src="node_modules/hammerjs/hammer.js"></script>
+
+    <script>
+        // External dependencies
+        cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+        cornerstoneWADOImageLoader.external.dicomParser = dicomParser;
+        cornerstoneTools.external.cornerstoneMath = cornerstoneMath;
+        cornerstoneTools.external.cornerstone = cornerstone;
+        cornerstoneTools.external.Hammer = Hammer;
+
+        // Initialize Cornerstone Tools
+        cornerstoneTools.init({
+            mouseEnabled: true,
+            touchEnabled: true,
+        });
+
+        const element = document.getElementById('dicomImage');
+        cornerstone.enable(element);
+
+        // Add and configure Pan tool
+        cornerstoneTools.addTool(cornerstoneTools.PanTool);
+        cornerstoneTools.setToolActive('Pan', { mouseButtonMask: 2 });
+
+        // Add and configure Zoom tool
+        cornerstoneTools.addTool(cornerstoneTools.ZoomTool, {
+            configuration: {
+                minScale: 0.1,
+                maxScale: 20.0
+            }
+        });
+        cornerstoneTools.setToolActive('Zoom', { mouseButtonMask: 1 });
+
+        // Add and configure Brush tool
+        cornerstoneTools.addTool(cornerstoneTools.BrushTool, {
+            configuration: {
+                minRadius: 1,
+                maxRadius: 50,
+                radius: 10
+            }
+        });
+        cornerstoneTools.setToolActive('Brush', { mouseButtonMask: 4 }); // Middle mouse button
+
+        // Load and display the DICOM image
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileUrl = URL.createObjectURL(file);
+
+            cornerstone.loadImage(`wadouri:${fileUrl}`).then(function(image) {
+                const stack = {
+                    currentImageIdIndex: 0,
+                    imageIds: [`wadouri:${fileUrl}`]
+                };
+
+                cornerstone.displayImage(element, image);
+                cornerstoneTools.addStackStateManager(element, ['stack']);
+                cornerstoneTools.addToolState(element, 'stack', stack);
+                console.log('Image loaded');
+            }).catch(function(err) {
+                console.error('Error loading image:', err);
+            });
+        });
+
+        // Zoom In and Zoom Out functions
+        function zoomImage(factor) {
+            const viewport = cornerstone.getViewport(element);
+            viewport.scale += factor;
+            if (viewport.scale < 0.1) viewport.scale = 0.1; // Prevent zoom out too much
+            if (viewport.scale > 20.0) viewport.scale = 20.0; // Prevent zoom in too much
+            cornerstone.setViewport(element, viewport);
+        }
+
+        // Attach click events to buttons
+        document.getElementById('zoomIn').addEventListener('click', function() {
+            zoomImage(0.1); // Zoom in
+            console.log('Zoom In tool activated');
+        });
+
+        document.getElementById('zoomOut').addEventListener('click', function() {
+            zoomImage(-0.1); // Zoom out
+            console.log('Zoom Out tool activated');
+        });
+
+        // Add mouse event listeners for debugging
+        element.addEventListener('mousedown', function(event) {
+            console.log('Mouse down event:', event);
+        });
+
+        element.addEventListener('mousemove', function(event) {
+            console.log('Mouse move event:', event);
+        });
+
+        element.addEventListener('mouseup', function(event) {
+            console.log('Mouse up event:', event);
+        });
+    </script>
+</body>
+</html>
