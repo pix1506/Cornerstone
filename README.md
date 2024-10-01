@@ -1,5 +1,7 @@
 # Cornerstone
 ```
 git clone
-cd 
+cd Cornerstone
+http-server
 ```
+最後再點擊dicom viewer就可以了
