@@ -1,1 +1,5 @@
 # Cornerstone
+```
+git clone
+cd 
+```
